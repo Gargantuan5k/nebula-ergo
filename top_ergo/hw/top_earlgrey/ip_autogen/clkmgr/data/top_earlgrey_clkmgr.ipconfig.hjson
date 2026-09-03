@@ -1,0 +1,469 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+{
+  instance_name: top_earlgrey_clkmgr
+  param_values:
+  {
+    src_clks:
+    {
+      main:
+      {
+        name: main
+        aon: false
+        freq: 100000000
+        ref: false
+      }
+      io:
+      {
+        name: io
+        aon: false
+        freq: 96000000
+        ref: false
+      }
+      usb:
+      {
+        name: usb
+        aon: false
+        freq: 48000000
+        ref: false
+      }
+      aon:
+      {
+        name: aon
+        aon: true
+        freq: 200000
+        ref: true
+      }
+      exp:
+      {
+        name: exp
+        aon: false
+        freq: 72000000
+        ref: false
+      }
+      exp2:
+      {
+        name: exp2
+        aon: false
+        freq: 60000000
+        ref: false
+      }
+    }
+    derived_clks:
+    {
+      io_div2:
+      {
+        name: io_div2
+        aon: false
+        freq: 48000000
+        ref: false
+        div: 2
+        src:
+        {
+          name: io
+          aon: no
+          freq: "96000000"
+          ref: false
+        }
+      }
+      io_div4:
+      {
+        name: io_div4
+        aon: false
+        freq: 24000000
+        ref: false
+        div: 4
+        src:
+        {
+          name: io
+          aon: no
+          freq: "96000000"
+          ref: false
+        }
+      }
+      main_div2:
+      {
+        name: main_div2
+        aon: false
+        freq: 50000000
+        ref: false
+        div: 2
+        src:
+        {
+          name: main
+          aon: no
+          freq: "100000000"
+          ref: false
+        }
+      }
+      main_div10:
+      {
+        name: main_div10
+        aon: false
+        freq: 10000000
+        ref: false
+        div: 10
+        src:
+        {
+          name: main
+          aon: no
+          freq: "100000000"
+          ref: false
+        }
+      }
+      usb_div4:
+      {
+        name: usb_div4
+        aon: false
+        freq: 12000000
+        ref: false
+        div: 4
+        src:
+        {
+          name: usb
+          aon: no
+          freq: "48000000"
+          ref: false
+        }
+      }
+      exp_div2:
+      {
+        name: exp_div2
+        aon: false
+        freq: 36000000
+        ref: false
+        div: 2
+        src:
+        {
+          name: exp
+          aon: no
+          freq: "72000000"
+          ref: false
+        }
+      }
+      exp_div8:
+      {
+        name: exp_div8
+        aon: false
+        freq: 9000000
+        ref: false
+        div: 8
+        src:
+        {
+          name: exp
+          aon: no
+          freq: "72000000"
+          ref: false
+        }
+      }
+      exp2_div2:
+      {
+        name: exp2_div2
+        aon: false
+        freq: 30000000
+        ref: false
+        div: 2
+        src:
+        {
+          name: exp2
+          aon: no
+          freq: "60000000"
+          ref: false
+        }
+      }
+      exp2_div6:
+      {
+        name: exp2_div6
+        aon: false
+        freq: 10000000
+        ref: false
+        div: 6
+        src:
+        {
+          name: exp2
+          aon: no
+          freq: "60000000"
+          ref: false
+        }
+      }
+    }
+    typed_clocks:
+    {
+      ast_clks:
+      {
+        clk_main_i:
+        {
+          src_name: main
+          endpoint_ip: clkmgr_aon
+        }
+        clk_io_i:
+        {
+          src_name: io
+          endpoint_ip: clkmgr_aon
+        }
+        clk_usb_i:
+        {
+          src_name: usb
+          endpoint_ip: clkmgr_aon
+        }
+        clk_aon_i:
+        {
+          src_name: aon
+          endpoint_ip: clkmgr_aon
+        }
+        clk_exp_i:
+        {
+          src_name: exp
+          endpoint_ip: clkmgr_aon
+        }
+        clk_exp2_i:
+        {
+          src_name: exp2
+          endpoint_ip: clkmgr_aon
+        }
+      }
+      ft_clks:
+      {
+        clk_io_div4_powerup:
+        {
+          src_name: io_div4
+          endpoint_ip: pwrmgr_aon
+        }
+        clk_aon_powerup:
+        {
+          src_name: aon
+          endpoint_ip: pwrmgr_aon
+        }
+        clk_main_powerup:
+        {
+          src_name: main
+          endpoint_ip: rstmgr_aon
+        }
+        clk_io_powerup:
+        {
+          src_name: io
+          endpoint_ip: rstmgr_aon
+        }
+        clk_usb_powerup:
+        {
+          src_name: usb
+          endpoint_ip: rstmgr_aon
+        }
+        clk_io_div2_powerup:
+        {
+          src_name: io_div2
+          endpoint_ip: rstmgr_aon
+        }
+        clk_exp_powerup:
+        {
+          src_name: exp
+          endpoint_ip: rstmgr_aon
+        }
+        clk_main_div2_powerup:
+        {
+          src_name: main_div2
+          endpoint_ip: rstmgr_aon
+        }
+        clk_main_div10_powerup:
+        {
+          src_name: main_div10
+          endpoint_ip: rstmgr_aon
+        }
+        clk_usb_div4_powerup:
+        {
+          src_name: usb_div4
+          endpoint_ip: rstmgr_aon
+        }
+        clk_exp_div2_powerup:
+        {
+          src_name: exp_div2
+          endpoint_ip: rstmgr_aon
+        }
+        clk_exp_div8_powerup:
+        {
+          src_name: exp_div8
+          endpoint_ip: rstmgr_aon
+        }
+        clk_exp2_powerup:
+        {
+          src_name: exp2
+          endpoint_ip: rstmgr_aon
+        }
+        clk_exp2_div2_powerup:
+        {
+          src_name: exp2_div2
+          endpoint_ip: rstmgr_aon
+        }
+        clk_exp2_div6_powerup:
+        {
+          src_name: exp2_div6
+          endpoint_ip: rstmgr_aon
+        }
+        clk_aon_peri:
+        {
+          src_name: aon
+          endpoint_ip: ast
+        }
+        clk_aon_timers:
+        {
+          src_name: aon
+          endpoint_ip: aon_timer_aon
+        }
+      }
+      rg_clks:
+      {
+        clk_io_div4_infra:
+        {
+          src_name: io_div4
+          endpoint_ip: ast
+        }
+        clk_main_infra:
+        {
+          src_name: main
+          endpoint_ip: flash_ctrl
+        }
+        clk_io_infra:
+        {
+          src_name: io
+          endpoint_ip: main
+        }
+        clk_io_div4_secure:
+        {
+          src_name: io_div4
+          endpoint_ip: otp_ctrl
+        }
+        clk_main_secure:
+        {
+          src_name: main
+          endpoint_ip: otp_ctrl
+        }
+        clk_io_div4_timers:
+        {
+          src_name: io_div4
+          endpoint_ip: rv_timer
+        }
+      }
+      sw_clks:
+      {
+        clk_io_div4_peri:
+        {
+          src_name: io_div4
+          endpoint_ip: uart0
+        }
+        clk_io_div2_peri:
+        {
+          src_name: io_div2
+          endpoint_ip: spi_device
+        }
+        clk_exp_peri:
+        {
+          src_name: exp
+          endpoint_ip: ergo_cdc_bridge0
+        }
+        clk_exp_div2_peri:
+        {
+          src_name: exp_div2
+          endpoint_ip: ergo_cdc_bridge1
+        }
+        clk_exp_div8_peri:
+        {
+          src_name: exp_div8
+          endpoint_ip: ergo_cdc_bridge2
+        }
+        clk_main_div2_peri:
+        {
+          src_name: main_div2
+          endpoint_ip: ergo_cdc_bridge3
+        }
+        clk_main_div10_peri:
+        {
+          src_name: main_div10
+          endpoint_ip: ergo_cdc_bridge4
+        }
+        clk_usb_div4_peri:
+        {
+          src_name: usb_div4
+          endpoint_ip: ergo_cdc_bridge5
+        }
+        clk_main_peri:
+        {
+          src_name: main
+          endpoint_ip: ergo_hold_gen2
+        }
+        clk_usb_peri:
+        {
+          src_name: usb
+          endpoint_ip: ergo_hold_gen4
+        }
+        clk_exp2_peri:
+        {
+          src_name: exp2
+          endpoint_ip: ergo_cdc_bridge6
+        }
+        clk_exp2_div2_peri:
+        {
+          src_name: exp2_div2
+          endpoint_ip: ergo_cdc_bridge7
+        }
+        clk_exp2_div6_peri:
+        {
+          src_name: exp2_div6
+          endpoint_ip: ergo_cdc_bridge8
+        }
+        clk_io_peri:
+        {
+          src_name: io
+          endpoint_ip: spi_host0
+        }
+      }
+      hint_clks:
+      {
+        clk_main_kmac:
+        {
+          src_name: main
+          endpoint_ip: kmac
+        }
+      }
+    }
+    hint_names:
+    {
+      clk_main_kmac: HintMainKmac
+    }
+    parent_child_clks:
+    {
+      main:
+      [
+        main
+        main_div2
+        main_div10
+      ]
+      io:
+      [
+        io
+        io_div2
+        io_div4
+      ]
+      usb:
+      [
+        usb
+        usb_div4
+      ]
+      exp:
+      [
+        exp
+        exp_div2
+        exp_div8
+      ]
+      exp2:
+      [
+        exp2
+        exp2_div2
+        exp2_div6
+      ]
+    }
+    exported_clks: {}
+    number_of_clock_groups: 7
+    topname: earlgrey
+  }
+}

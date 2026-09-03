@@ -1,0 +1,60 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Copyright Gargantuan5k, 2026 (new IP: ergo_hold_gen).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+//
+{
+  name:               "ergo_hold_gen",
+  human_name:         "Ergo Hold/CDC Violation Generator",
+  cip_id:             "43",
+  one_line_desc:      "Deliberate unsynchronized root-to-derived-clock register crossing, for nebula-cogito timing-closure benchmarking",
+  one_paragraph_desc: '''
+  Pushes a seed byte into clk_a_i (a root clock) via prim_fifo_async, then
+  crosses that value directly into clk_b_i (clk_a_i's own derived clock)
+  with NO synchronizer -- a known, deliberately-injected hold/CDC violation,
+  not an accidental one. The captured value is read back safely via
+  prim_flop_2sync so only that one hop is the intended violation.
+  '''
+  revisions: [
+    {
+      version:            "0.1.0",
+      life_stage:         "L1",
+      design_stage:       "D1",
+      verification_stage: "V1",
+      notes:              "",
+    }
+  ]
+  clocking: [
+    {clock: "clk_i", reset: "rst_ni", primary: true},
+    {clock: "clk_a_i", reset: "rst_a_ni"},
+    {clock: "clk_b_i", reset: "rst_b_ni"},
+  ]
+  bus_interfaces: [
+    { protocol: "tlul", direction: "device" }
+  ],
+  available_input_list: [],
+  available_output_list: [],
+  interrupt_list: [],
+  alert_list: [],
+  regwidth: "32",
+  registers: [
+    { name: "SEED",
+      desc: "Write a seed byte to push towards clk_a_i",
+      swaccess: "wo",
+      hwaccess: "hro",
+      hwext: "true",
+      hwqe: "true",
+      fields: [
+        { bits: "7:0", name: "d", desc: "Seed byte" },
+      ],
+    },
+    { name: "CAPTURED",
+      desc: "Value captured by clk_b_i across the unsynchronized hop, read back via prim_flop_2sync",
+      swaccess: "ro",
+      hwaccess: "hwo",
+      fields: [
+        { bits: "7:0", name: "v", desc: "Captured value" },
+      ],
+    },
+  ],
+}

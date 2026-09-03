@@ -1,0 +1,68 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Copyright Gargantuan5k, 2026 (new IP: ergo_cdc_bridge).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+//
+{
+  name:               "ergo_cdc_bridge",
+  human_name:         "Ergo CDC Bridge",
+  cip_id:             "41",
+  one_line_desc:      "Async-FIFO + req/ack CDC bridge from clk_i to clk_rd_i, for nebula-cogito benchmark clock-domain coverage",
+  one_paragraph_desc: '''
+  Bridges a byte stream from the register-interface clock domain (clk_i) into a
+  second, independently-clocked consumer domain (clk_rd_i) via prim_fifo_async,
+  and reports pop events back via prim_sync_reqack. Exists to give benchmark-only
+  clock domains (main_div2, main_div10, usb_div4, exp, exp_div2, exp_div8) a real,
+  synthesizable consumer with a genuine CDC boundary.
+  '''
+  revisions: [
+    {
+      version:            "0.1.0",
+      life_stage:         "L1",
+      design_stage:       "D1",
+      verification_stage: "V1",
+      notes:              "",
+    }
+  ]
+  clocking: [
+    {clock: "clk_i", reset: "rst_ni", primary: true},
+    {clock: "clk_rd_i", reset: "rst_rd_ni"},
+  ]
+  bus_interfaces: [
+    { protocol: "tlul", direction: "device" }
+  ],
+  available_input_list: [],
+  available_output_list: [],
+  interrupt_list: [],
+  alert_list: [],
+  regwidth: "32",
+  registers: [
+    { name: "DATA_IN",
+      desc: "Write a byte to push into the async FIFO towards clk_rd_i",
+      swaccess: "wo",
+      hwaccess: "hro",
+      hwext: "true",
+      hwqe: "true",
+      fields: [
+        { bits: "7:0", name: "d", desc: "Byte to push" },
+      ],
+    },
+    { name: "FIFO_STATUS",
+      desc: "Async FIFO status, valid in clk_i domain",
+      swaccess: "ro",
+      hwaccess: "hwo",
+      fields: [
+        { bits: "0", name: "empty", desc: "FIFO is empty" },
+        { bits: "1", name: "full", desc: "FIFO is full" },
+      ],
+    },
+    { name: "POP_COUNT",
+      desc: "Count of words popped on the clk_rd_i side, synchronized back via prim_sync_reqack",
+      swaccess: "ro",
+      hwaccess: "hwo",
+      fields: [
+        { bits: "31:0", name: "count", desc: "Pop count" },
+      ],
+    },
+  ],
+}

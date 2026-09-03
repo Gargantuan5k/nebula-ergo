@@ -1,0 +1,62 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Copyright Gargantuan5k, 2026 (new IP: ergo_setup_gen).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+//
+{
+  name:               "ergo_setup_gen",
+  human_name:         "Ergo Setup Violation Generator",
+  cip_id:             "42",
+  one_line_desc:      "Deliberate, parameterized unpipelined MAC chain on clk_gen_i, for nebula-cogito timing-closure benchmarking",
+  one_paragraph_desc: '''
+  Latches an operand from clk_i (via prim_fifo_async), runs it through a
+  purely feedforward, unpipelined multiply-accumulate chain entirely within
+  clk_gen_i (parameterized NumStages), and reports the result back via
+  prim_sync_reqack. The chain has NumStages natural pipeline-insertion
+  points -- a closure-competent optimizer can always meet timing by
+  retiming/pipelining it, since the surrounding req/ack handshake tolerates
+  added latency. This is a known, documented, deliberately-injected setup
+  violation, not an accidental one.
+  '''
+  revisions: [
+    {
+      version:            "0.1.0",
+      life_stage:         "L1",
+      design_stage:       "D1",
+      verification_stage: "V1",
+      notes:              "",
+    }
+  ]
+  clocking: [
+    {clock: "clk_i", reset: "rst_ni", primary: true},
+    {clock: "clk_gen_i", reset: "rst_gen_ni"},
+  ]
+  bus_interfaces: [
+    { protocol: "tlul", direction: "device" }
+  ],
+  available_input_list: [],
+  available_output_list: [],
+  interrupt_list: [],
+  alert_list: [],
+  regwidth: "32",
+  registers: [
+    { name: "OPERAND_IN",
+      desc: "Write an operand to push into the MAC chain towards clk_gen_i",
+      swaccess: "wo",
+      hwaccess: "hro",
+      hwext: "true",
+      hwqe: "true",
+      fields: [
+        { bits: "15:0", name: "d", desc: "Operand" },
+      ],
+    },
+    { name: "RESULT",
+      desc: "Latest MAC chain result, synchronized back from clk_gen_i",
+      swaccess: "ro",
+      hwaccess: "hwo",
+      fields: [
+        { bits: "31:0", name: "v", desc: "Result" },
+      ],
+    },
+  ],
+}

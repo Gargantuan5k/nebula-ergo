@@ -1,0 +1,53 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Copyright Gargantuan5k, 2026 (new IP: ergo_cdc_hazard_gen).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+//
+{
+  name:               "ergo_cdc_hazard_gen",
+  human_name:         "Ergo CDC Data-Integrity Hazard Generator",
+  cip_id:             "44",
+  one_line_desc:      "Deliberate multi-bit bus CDC hazard (bit-tearing) with a self-checking Gray-coded reference, for nebula-cogito timing-closure benchmarking",
+  one_paragraph_desc: '''
+  Free-runs a 16-bit counter in clk_a_i and crosses it into clk_b_i two ways:
+  an unsynchronized direct capture (the deliberate hazard -- multiple bits
+  can be mid-transition when sampled, risking a torn/incoherent value), and
+  a Gray-coded crossing through prim_flop_2sync (the same technique
+  prim_fifo_async uses internally, safe by construction). A comparator in
+  clk_b_i flags disagreements between the two, and MISMATCH_COUNT reports
+  how often the unsafe path actually tears -- a genuine, checkable
+  CDC data-integrity violation, not just a timing-only one.
+  '''
+  revisions: [
+    {
+      version:            "0.1.0",
+      life_stage:         "L1",
+      design_stage:       "D1",
+      verification_stage: "V1",
+      notes:              "",
+    }
+  ]
+  clocking: [
+    {clock: "clk_i", reset: "rst_ni", primary: true},
+    {clock: "clk_a_i", reset: "rst_a_ni"},
+    {clock: "clk_b_i", reset: "rst_b_ni"},
+  ]
+  bus_interfaces: [
+    { protocol: "tlul", direction: "device" }
+  ],
+  available_input_list: [],
+  available_output_list: [],
+  interrupt_list: [],
+  alert_list: [],
+  regwidth: "32",
+  registers: [
+    { name: "MISMATCH_COUNT",
+      desc: "Count of detected bit-tearing events between the unsafe and safe crossings",
+      swaccess: "ro",
+      hwaccess: "hwo",
+      fields: [
+        { bits: "31:0", name: "v", desc: "Mismatch count" },
+      ],
+    },
+  ],
+}

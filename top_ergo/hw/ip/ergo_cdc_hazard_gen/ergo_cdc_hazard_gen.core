@@ -1,0 +1,39 @@
+CAPI=2:
+# Copyright lowRISC contributors (OpenTitan project).
+# Copyright Gargantuan5k, 2026 (new IP: ergo_cdc_hazard_gen).
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+name: "lowrisc:ip:ergo_cdc_hazard_gen:0.1"
+description: "ergo_cdc_hazard_gen -- nebula-cogito benchmark deliberate CDC data-integrity hazard"
+filesets:
+  files_rtl:
+    depend:
+      - lowrisc:prim:all
+      - lowrisc:ip:tlul
+    files:
+      - rtl/ergo_cdc_hazard_gen_reg_pkg.sv
+      - rtl/ergo_cdc_hazard_gen_reg_top.sv
+      - rtl/ergo_cdc_hazard_gen.sv
+    file_type: systemVerilogSource
+
+parameters:
+  SYNTHESIS:
+    datatype: bool
+    paramtype: vlogdefine
+
+targets:
+  default: &default_target
+    filesets:
+      - files_rtl
+    toplevel: ergo_cdc_hazard_gen
+
+  lint:
+    <<: *default_target
+    default_tool: verilator
+    parameters:
+      - SYNTHESIS=true
+    tools:
+      verilator:
+        mode: lint-only
+        verilator_options:
+          - "-Wall"
