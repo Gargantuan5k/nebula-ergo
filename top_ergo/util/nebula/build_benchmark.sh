@@ -45,19 +45,23 @@ done
 step() { echo ""; echo "########## $1 ##########"; }
 
 if [ "$SKIP_TOPGEN" -eq 0 ]; then
-  step "1/3 topgen"
+  step "1/4 topgen"
   util/nebula/run_topgen.sh
 else
-  step "1/3 topgen (skipped)"
+  step "1/4 topgen (skipped)"
 fi
 
-step "2/3 sv2v conversion"
+step "2/4 sv2v conversion"
 util/nebula/sv2v_convert.sh
 
-step "3/3 Yosys synthesis"
+step "3/4 Yosys synthesis"
 util/nebula/synth_yosys.sh
+
+step "4/4 SDC generation"
+util/nebula/gen_sdc.py
 
 echo ""
 echo "########## done ##########"
 echo "netlist:     hw/top_earlgrey/syn_out/top_earlgrey_netlist.v"
 echo "area report: hw/top_earlgrey/syn_out/area.rpt"
+echo "SDC:         hw/top_earlgrey/syn_out/top_earlgrey.sdc"

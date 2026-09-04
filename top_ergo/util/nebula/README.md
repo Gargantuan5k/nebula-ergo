@@ -17,7 +17,7 @@ util/nebula/build_benchmark.sh   # full pipeline
 ```
 
 Output: `hw/top_earlgrey/syn_out/top_earlgrey_netlist.v` +
-`hw/top_earlgrey/syn_out/area.rpt`.
+`hw/top_earlgrey/syn_out/area.rpt` + `hw/top_earlgrey/syn_out/top_earlgrey.sdc`.
 
 ## Scripts, in pipeline order
 
@@ -28,6 +28,7 @@ Output: `hw/top_earlgrey/syn_out/top_earlgrey_netlist.v` +
 | `gen_sv2v_filelist.py` | Turn fusesoc's own dependency resolution (`eda.yml`) into an sv2v file list |
 | `sv2v_convert.sh` | Convert the design to plain Verilog with sv2v (Yosys's native `-sv` frontend can't parse several constructs this design uses) |
 | `synth_yosys.sh` | Run Yosys synthesis on the converted netlist, produce `area.rpt` |
+| `gen_sdc.py` | Generate `top_earlgrey.sdc` (clocks + clock groups) from the hjson and clkmgr's divider topology |
 | `build_benchmark.sh` | Runs all of the above in order |
 
 Each script is standalone — re-run just the one you need. A clock-only
@@ -83,15 +84,56 @@ that are mechanically checkable:
    design less representative of anything that could tape out.
 
 None of this tells you a *maximum frequency* the design can run at and
-still close timing — that's a question for static timing analysis (STA)
-against a real SDC, not something topgen or Yosys's structural synthesis
-(`stat -liberty`, no timing constraints applied) can answer. **That
-tooling doesn't exist in this repo yet** — no SDC file, no OpenSTA
-integration. `synth_yosys.sh` produces a cell-count/area report, not a
-timing report. If/when an SDC + OpenSTA flow gets built (tracked
-separately as the evaluator work), re-run it after any frequency change;
-until then, treat frequency changes as "mechanically valid" rather than
-"provably meets timing."
+still close timing — that's a question for static timing analysis (STA),
+not something topgen or Yosys's structural synthesis (`stat -liberty`, no
+timing constraints applied) can answer. `synth_yosys.sh` itself still
+only produces a cell-count/area report, not a timing report — no STA tool
+runs as part of this repo's own pipeline.
+
+What *does* exist now: `gen_sdc.py` generates
+`hw/top_earlgrey/syn_out/top_earlgrey.sdc` — `create_clock`/
+`create_generated_clock` for all 15 clocks (6 masters + 9 derived, read
+straight from this same hjson) plus `set_clock_groups -asynchronous`
+between independent-oscillator families. See "SDC generation" below for
+what it does and doesn't model. It's regenerated on every
+`build_benchmark.sh` run (step 4/4), so it never goes stale after a
+frequency change — but nothing in this repo actually *runs* STA against
+it yet. That's separate, larger future work (an OpenSTA integration,
+tracked as the evaluator itself) — the SDC is meant to be a ready input
+for that, not proof this design meets it.
+
+## SDC generation
+
+`gen_sdc.py` derives the SDC entirely from things already declared
+elsewhere — `top_earlgrey.hjson`'s clock frequencies (via `clocks.py`'s
+`ClockConfig`) and clkmgr's divider topology, which follows a fixed
+topgen naming convention (every derived clock `<name>` comes from an
+instance `u_no_scan_<name>_div` inside `u_clkmgr_aon`, output pin
+`clk_o` — verified against both `clkmgr.sv` and the synthesized
+netlist). Nothing about it is hand-maintained, so it can't drift from the
+hjson the way a hand-written SDC would.
+
+Two scoping decisions worth knowing if you extend this:
+
+- **Clock groups are asynchronous by oscillator family, not by pair.**
+  Every clock derived from the same master (e.g. `exp`, `exp_div2`,
+  `exp_div8`) stays in one `set_clock_groups` group, so
+  `ergo_hold_gen`/`ergo_cdc_hazard_gen`'s deliberate violations — which
+  cross between a master and its own derived clock, a real synchronous
+  relationship — are actually analyzed, not excluded. Clocks from
+  *different* families (e.g. `io_div4` vs. `exp`) are asynchronous,
+  matching every genuinely independent-oscillator crossing in this
+  design, including `ergo_cdc_bridge`'s reference-correct crossings
+  (`prim_fifo_async` + `prim_sync_reqack`), which must not be flagged as
+  ordinary synchronous setup/hold violations.
+- **No input/output delay constraints on top-level IO/pad ports**
+  (`mio_*`, `dio_*`, `ast_*`, `flash_*`, `otp_*`, `scan_*`, ...). None of
+  this benchmark's injected violations touch chip-boundary ports — they're
+  all IP-internal — and this repo has no real package/board timing spec
+  to derive plausible delay values from. Fabricating IO timing with no
+  grounding would be worse than leaving it unconstrained; if this ever
+  needs to model IO boundary timing, that requires an actual spec to
+  derive it from, not invented numbers.
 
 ## sv2v conversion notes
 
