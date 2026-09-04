@@ -30,6 +30,7 @@ Output: `hw/top_earlgrey/syn_out/top_earlgrey_netlist.v` +
 | `synth_yosys.sh` | Run Yosys synthesis on the converted netlist, produce `area.rpt` |
 | `gen_sdc.py` | Generate `top_earlgrey.sdc` (clocks + clock groups) from the hjson and clkmgr's divider topology |
 | `build_benchmark.sh` | Runs all of the above in order |
+| `package_release.sh` | Assemble the exact minimal file set handed to the optimization-engine team (netlist + SDC + liberty + a trimmed area summary + `RELEASE_MANUAL.md`) into `release/` — see the repo-root `RELEASE_MANUAL.md` for the full usage contract and why RTL/`ergo_manifest.yaml`/`notes.md` are deliberately excluded |
 
 Each script is standalone — re-run just the one you need. A clock-only
 change, for example, only needs `clocks.py set` → `run_topgen.sh` →

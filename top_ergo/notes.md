@@ -653,5 +653,19 @@ Raised this as a real decision (not something to silently resolve): add a compli
 
 Also flagged, not yet acted on: `hw/top_earlgrey/data/ergo_manifest.yaml` is this benchmark's ground-truth answer key (exact violation type/location/closability per instance) — valuable for grading the optimizer's fix rate, but it must not be part of what the "blind, design-agnostic" optimizer itself reads, or the evaluation stops being blind. Worth flagging to whoever owns the scoring/evaluation piece once that work starts.
 
+## Release packaging for the optimizer team (2026-09-04)
+
+Prompted by: "draft a document ... that acts like a comprehensive To-Do manual ... you have to ensure that there's no cheating possible." Before drafting anything, checked what's actually in the repo that could leak the answer — found something worse than the manifest file: the `ergo_*` RTL source comments themselves spell out the exact defect, e.g. `ergo_hold_gen.sv:81` *"DELIBERATE VIOLATION: reg_a_q ... sampled directly by a clk_b_i-domain flop with no synchronizer"* and even *"Do not 'fix' this with a synchronizer."* Handing over RTL as-is would have been a much bigger leak than `ergo_manifest.yaml` ever was.
+
+Resolution: the hackathon's own rules say the benchmark-providing team may submit *either* RTL or a netlist — so netlist-only is fully compliant, not a workaround. A synthesized netlist has no comments (Yosys strips them), which closes this leak entirely for free, and it's the same choice already made for iteration-speed reasons (see the earlier RTL-vs-netlist architecture discussion). Residual leak: hierarchical instance names in the netlist (`ergo_hold_gen0`, etc.) still semantically hint at violation type. Asked the user whether to also anonymize module/instance names before the final synth run (~30-40 min re-run cost) vs. ship as-is; user chose **ship as-is** — the naming hint is a much weaker signal than the RTL comments were, and closing it isn't worth the time cost right now.
+
+Built the actual handoff, not just a written policy (a document alone can't guarantee "no cheating" if the underlying files are still sitting in the repo):
+
+- **`RELEASE_MANUAL.md`** (repo root) — the full usage contract for whoever's agent consumes this: what's provided (netlist/SDC/liberty/area-summary only), why netlist-not-RTL, the exact Yosys/liberty toolchain the baseline was produced with, how to read the SDC's clock-group semantics, the formal-equivalence gate (EQY, mandatory, checked against the *original* netlist), anti-gaming rules (no stuck-value tie-offs disguised as optimization), and explicit rules of engagement (treat the design as a black box; don't infer intent from instance names; don't seek out anything beyond the listed files even if visible through some other channel).
+- **`util/nebula/package_release.sh`** — assembles `release/` (gitignored, regenerated on demand) containing exactly: `top_earlgrey_netlist.v`, `top_earlgrey.sdc`, the liberty file, `RELEASE_MANUAL.md`, and `reference_area_summary.txt`. That last one matters: `area.rpt` is a 37K-line multi-pass synthesis log (every intermediate `stat` snapshot plus a full recursive per-submodule dump) — handing it over as-is risks the recipient reading a stale mid-synthesis number by mistake (exactly the confusion this session hit while analyzing per-IP cell counts earlier today). The script extracts only the final "Count/Area including submodules" summary block (found by locating the *last* occurrence of that header, not the first) into a clean ~90-line file instead.
+- Added `release/` to `.gitignore` — same reasoning as `build/`/`build-nebula/`: fully regenerable from already-tracked files, not worth committing a redundant copy.
+
+Verified: ran `package_release.sh`, confirmed `reference_area_summary.txt`'s cell total (854,531) matches the real final number, not a mid-synthesis one.
+
 
 
