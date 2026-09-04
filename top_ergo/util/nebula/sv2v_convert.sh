@@ -20,7 +20,7 @@
 #
 # Usage: util/nebula/sv2v_convert.sh
 set -euo pipefail
-cd "$(git rev-parse --show-toplevel 2>/dev/null || dirname "$0"/../..)"
+cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # shellcheck disable=SC1091
 source util/nebula/_venv.sh
 

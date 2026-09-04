@@ -22,7 +22,7 @@
 # Usage: SYN_LIBERTY=path/to/lib.lib util/nebula/synth_yosys.sh
 #   (defaults to hw/top_earlgrey/syn_lib/NangateOpenCellLibrary_typical.lib)
 set -euo pipefail
-cd "$(git rev-parse --show-toplevel 2>/dev/null || dirname "$0"/../..)"
+cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 OUT="${NEBULA_OUT:-build-nebula}"
 VLIST="$OUT/v_files.txt"

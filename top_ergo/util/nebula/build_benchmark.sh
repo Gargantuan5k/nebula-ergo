@@ -25,7 +25,7 @@
 # Requires: a Python 3.12 venv with fusesoc/topgen/edalize (see
 # util/nebula/_venv.sh), sv2v (see util/nebula/sv2v_convert.sh), Yosys.
 set -euo pipefail
-cd "$(git rev-parse --show-toplevel 2>/dev/null || dirname "$0"/../..)"
+cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 SKIP_TOPGEN=0
 for arg in "$@"; do

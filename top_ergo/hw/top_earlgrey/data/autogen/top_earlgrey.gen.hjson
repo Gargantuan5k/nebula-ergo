@@ -8161,7 +8161,7 @@
       {
         PMPEnable: "1"
         PMPGranularity: "0"
-        PMPNumRegions: "16"
+        PMPNumRegions: "4"
         MHPMCounterNum: "2"
         MHPMCounterWidth: "32"
         RV32E: "0"
@@ -8170,9 +8170,9 @@
         RegFile: ibex_pkg::RegFileFF
         BranchTargetALU: "1"
         WritebackStage: "1"
-        ICache: "1"
-        ICacheECC: "1"
-        ICacheScramble: "1"
+        ICache: "0"
+        ICacheECC: "0"
+        ICacheScramble: "0"
         BranchPredictor: "0"
         DbgTriggerEn: "1"
         DbgHwBreakNum: "4"
@@ -8294,7 +8294,7 @@
           name: PMPNumRegions
           desc: PMP number of regions
           type: int unsigned
-          default: "16"
+          default: "4"
           expose: "true"
           name_top: RvCoreIbexPMPNumRegions
         }
@@ -8366,7 +8366,7 @@
           name: ICache
           desc: Instruction cache
           type: bit
-          default: "1"
+          default: "0"
           expose: "true"
           name_top: RvCoreIbexICache
         }
@@ -8374,7 +8374,7 @@
           name: ICacheECC
           desc: Instruction cache ECC
           type: bit
-          default: "1"
+          default: "0"
           expose: "true"
           name_top: RvCoreIbexICacheECC
         }
@@ -8382,7 +8382,7 @@
           name: ICacheScramble
           desc: Scramble instruction cach
           type: bit
-          default: "1"
+          default: "0"
           expose: "true"
           name_top: RvCoreIbexICacheScramble
         }

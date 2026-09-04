@@ -73,10 +73,22 @@ instances (`uart`×4→1, `i2c`×3→1, `spi_host`×2→1). `csrng`/`entropy_src
 see `notes.md`'s "Baseline Yosys synthesis + pipeline formalization"
 section for the details and the false starts.
 
-Current size: **898,237 standard cells** (NanGate45), down from stock
+Current size: **854,531 standard cells** (NanGate45), down from stock
 earlgrey's ~1.37M. Still well over the project's original 50-100K target
-— see "Further trimming, not yet done" below. This is the accepted
-"final for now" state.
+— see "Further trimming, not yet done" below.
+
+## Hackathon design requirements
+
+The hackathon's stated design requirements for the RTL/netlist under test,
+and how this benchmark satisfies each:
+
+| requirement | status |
+|---|---|
+| ≥5 independent async master clock domains | **6**: `main`, `io`, `usb`, `aon`, `exp`, `exp2` |
+| ≥1 generated clock per master | **5 of the 6.** `main`, `io`, `usb`, `exp`, `exp2` each have 1-2 derived clocks (9 total, see `util/nebula/clocks.py show`). `aon` doesn't — real OpenTitan's `clkmgr` structurally forbids deriving a clock *from* `aon` (topgen's own generator code raises on it; see `util/nebula/README.md`'s "What's actually safe to change" §4). Rather than bolt on a synthetic divider purely to check this box, `aon` is counted as a genuine **bonus 6th master domain**, beyond the 5 required — the other 5 (`main`/`io`/`usb`/`exp`/`exp2`) independently satisfy "at least 5 masters, each with ≥1 generated clock" on their own. |
+| Clock Domain Crossings (CDC) between async domains | **yes** — `ergo_cdc_bridge`×9 (reference-correct: real `prim_fifo_async` + `prim_sync_reqack`), plus `ergo_hold_gen`×7 / `ergo_cdc_hazard_gen`×7 (deliberate violations) |
+| clock divider logic, multiple division ratios | **yes** — ÷2, ÷4, ÷6, ÷8, ÷10 all present across the 9 derived clocks |
+| ~50K+ standard cells | **yes** — 854,531 (NanGate45) |
 
 ## Quick start
 
@@ -121,11 +133,34 @@ RTL/hjson change — they go stale the moment source changes.
 
 ## Further trimming, not yet done
 
-~929K cells is still far above the original 50-100K target. What's left,
-roughly in order of how much it would save vs. how risky it is:
+854K cells is still far above the original 50-100K target — and, per the
+hackathon rules, the design size directly affects the runtime/API cost
+whoever builds the GenAI optimizer pays per iteration against this
+benchmark, so trimming further is a real lever on the team's overall
+score, not just housekeeping. What's left, roughly in order of how much
+it would save vs. how risky it is:
 
-- **`lc_ctrl`/`otp_ctrl`/`flash_ctrl`/`keymgr` removal** — the biggest
-  remaining lever, but these are wired into `pwrmgr`'s **hand-written**
+- **`ibex` core config — done.** Was the stock, full-featured build
+  (~179K area). Turning off `ICache`/`ICacheECC`/`ICacheScramble` and
+  dropping `PMPNumRegions` 16→4 (both pure `param_decl` edits, no RTL
+  surgery) cut it to ~109K area — a ~39% reduction on that block alone,
+  and it accounted for essentially the entire design-wide 898,268→854,531
+  cell drop (every other IP came back unchanged to 3 significant figures
+  in the same run). `RV32B`/`RV32M`/`SecureIbex` were left alone —
+  changing those trades away real ISA/security-countermeasure
+  functionality, not just synthesis fat.
+- **`kmac`/`entropy_src`/`csrng` cluster (~252K cells, ~28% of the
+  design)** — bigger than initially scoped, and not previously called out
+  here. Entangled: `kmac.app` has exactly three consumers —
+  `keymgr`, `lc_ctrl`, **and `rom_ctrl`** (verified against
+  `top_earlgrey.hjson`'s `inter_module` block) — so `kmac` survives even
+  a full `keymgr`+`lc_ctrl` removal unless `rom_ctrl`'s digest check is
+  also stubbed, which is a real change to the boot/security model, not a
+  trim. `entropy_src`/`csrng` feed `edn`, which fans out to `keymgr`,
+  `otp_ctrl`, `ast`, `kmac` itself, and ibex's own countermeasures — same
+  entanglement. Needs its own dependency audit before it's a safe target.
+- **`lc_ctrl`/`otp_ctrl`/`flash_ctrl`/`keymgr` removal (~188K cells,
+  ~21%)** — these are wired into `pwrmgr`'s **hand-written**
   (non-topgen-templated) power-up FSM via real handshakes (`pwr_lc`,
   `pwr_otp`, `pwr_flash`), and `rv_core_ibex.lc_cpu_en` gates the CPU
   itself. Removing them requires hand-patching pwrmgr's FSM to bypass
@@ -134,19 +169,24 @@ roughly in order of how much it would save vs. how risky it is:
   Yosys will legitimately constant-propagate a stuck-disabled enable into
   deleting large amounts of otherwise-real logic (this is the exact
   failure mode called out in the project's evaluator-design notes).
-- **`ibex` core config** — currently the stock, full-featured build
-  (~108K cells estimated). A leaner config (drop the icache, simpler
-  multiplier) would cut this down but hasn't been evaluated for how much
-  it'd actually save here, or whether it changes the benchmark's realism.
 - **`ergo_*` instance count / `NumStages`** — already tuned once
   (`ergo_setup_gen`'s `NumStages` 8→4). Could go further, but instance
   count is already minimal (exactly 1 per clock-domain requirement, not
   padded) and cutting `NumStages` further starts to remove the multi-stage
   pipelining challenge that's the point of that IP.
-- No real STA exists yet — `hw/top_earlgrey/syn_out/top_earlgrey.sdc`
+- **Yosys-level `share`/`opt -full` — tried, not worth it.** Added ahead
+  of `abc` in `syn_top_earlgrey.tcl` to see if resource sharing / a full
+  optimization sweep found anything the default `synth` script's own
+  passes missed. Measured effect: none (every block held its cell count
+  to 3 significant figures) — for ~35 extra minutes of runtime and a peak
+  memory footprint (~8GB) that risked tripping an OOM killer on a
+  memory-constrained machine. Not worth keeping; don't retry this without
+  a specific reason to think it'll behave differently.
+- No real STA exists in this repo's own pipeline — `top_earlgrey.sdc`
   (see `util/nebula/README.md`'s "SDC generation" section) gives clocks
-  and clock-group exceptions, but nothing in this repo's pipeline
-  actually runs an STA tool against it, and `stat -liberty` gives cell
-  count/area, not timing. That's separate, larger future work (the
-  evaluator itself), not a trimming lever.
+  and clock-group exceptions, but nothing here runs an STA tool against
+  it, and `stat -liberty` gives cell count/area, not timing. That's the
+  separate "RTL timing analysis framework" deliverable (OpenSTA is in the
+  hackathon's own tools list) — this benchmark's job is just to hand that
+  piece an SDC it can actually use, which it now can.
 
